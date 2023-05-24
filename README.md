@@ -10,4 +10,6 @@ pip3 install -U pysr
 
 # Finally, to install Julia dependencies:
 
-python3 -m pysr install
+python -m pysr install
+
+pip install -r requirements.txt

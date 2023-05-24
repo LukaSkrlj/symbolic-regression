@@ -1,4 +1,11 @@
 import numpy as np
+import requests
+import json
+
+r = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
+
+#Bitcoin Hash Rate
+print(r.json()['dataset']['data'])
 
 X = 2 * np.random.randn(100, 5)
 y = 2.5382 * np.cos(X[:, 3]) + X[:, 0] ** 2 - 0.5
