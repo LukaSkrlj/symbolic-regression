@@ -2,6 +2,7 @@ from telnetlib import X3PAD
 import numpy as np
 import requests
 import json
+import matplotlib.pyplot as plt
 
 arrayLength = 100
 def sanitize(jsonData):
@@ -10,14 +11,16 @@ def sanitize(jsonData):
 hashRate = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
 dificulty = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 averageBlockSize =  requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+minerRevenue = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 
 bitcoinPrice = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 
 X0 = sanitize(hashRate)
 X1 = sanitize(dificulty)
 X2 = sanitize(averageBlockSize)
+X3 = sanitize(minerRevenue)
 
-X = np.c_[X0, X1, X2]
+X = np.c_[X0, X1, X2, X3]
 
 Y = sanitize(bitcoinPrice)
 
