@@ -3,6 +3,7 @@ import numpy as np
 import requests
 import json
 import matplotlib.pyplot as plt
+from numpy import sin, cos, tan, exp, square
 
 arrayLength = 100
 def sanitize(jsonData):
@@ -18,9 +19,9 @@ bitcoinPrice = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPR
 X0 = sanitize(hashRate)
 X1 = sanitize(dificulty)
 X2 = sanitize(averageBlockSize)
-X3 = sanitize(minerRevenue)
+# X3 = sanitize(minerRevenue)
 
-X = np.c_[X0, X1, X2, X3]
+X = np.c_[X0, X1, X2]
 
 Y = sanitize(bitcoinPrice)
 
@@ -98,3 +99,10 @@ model = PySRRegressor(
 
 model.fit(X,Y)
 
+result = (((29182.05778922693 - X2) - 1/(square(sin(sin(sin(pow(-1.2891089844873154 * X2,3))))))) - (((4482.529706112431 * exp(cos(square(X1 - -0.31671563304042566)))) * square(cos(square(1.7327020067419614 * X1) + X2))) + 1/(square(sin(sin(pow(-1.2891089844873154 * X2, 3)))))))
+plt.figure()
+plt.title('Cijene bitcoina u posljednjih' + arrayLength + 'dana (USD)')
+plt.plot(Y)
+plt.plot(result, 'r', alpha=0.6)
+plt.legend(['Stvarna cijena bitcoina', 'Cijena dobivena sa funkcijom iz simboličke regresije'])
+plt.show()
