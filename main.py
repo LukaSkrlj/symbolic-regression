@@ -1,30 +1,48 @@
-from telnetlib import X3PAD
 import numpy as np
 import requests
 import json
 import matplotlib.pyplot as plt
 from numpy import sin, cos, tan, exp, square
+import sys
 
+np.set_printoptions(threshold=sys.maxsize)
+
+#Each dataset size (column) before averaging
 arrayLength = 100
-def sanitize(jsonData):
-    return np.float_(np.array(jsonData.json()['dataset']['data'])[:,1][:arrayLength])
+#Average every 'averageCount' items in dataset
+averageCount = 5
+#Number of pastDays in the past for each averaged dataset
+pastDays = 5
+
+if arrayLength % averageCount != 0:
+    raise Exception("Average count must be multiplier of array length")
+
+def sanitize(jsonData, start=0, end=arrayLength):
+    return np.average(np.float_(np.array(jsonData.json()['dataset']['data'])[:,1][start:end]).reshape(-1, averageCount), axis=1)
 
 hashRate = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
-dificulty = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-averageBlockSize =  requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+difficulty = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+averageBlockSize = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 minerRevenue = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 
 bitcoinPrice = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+datasets = [hashRate, difficulty, averageBlockSize]
 
-X0 = sanitize(hashRate)
-X1 = sanitize(dificulty)
-X2 = sanitize(averageBlockSize)
-# X3 = sanitize(minerRevenue)
+averagedArrayLength = arrayLength // averageCount
+X = np.array([[] for a in range(averagedArrayLength)])
+print(X)
 
-X = np.c_[X0, X1, X2]
-
+for i in range(pastDays):
+    start = i * averageCount
+    for dataset in datasets:
+        print("dataset")
+        sanitizedDataset = np.array([sanitize(dataset)]).transpose()
+        print(sanitizedDataset)
+        X = np.hstack((X,sanitizedDataset))
+        print(X)
+        
 Y = sanitize(bitcoinPrice)
-
+print(X,Y)
 from pysr import PySRRegressor
 
 model = PySRRegressor(
@@ -99,10 +117,10 @@ model = PySRRegressor(
 
 model.fit(X,Y)
 
-result = (((29182.05778922693 - X2) - 1/(square(sin(sin(sin(pow(-1.2891089844873154 * X2,3))))))) - (((4482.529706112431 * exp(cos(square(X1 - -0.31671563304042566)))) * square(cos(square(1.7327020067419614 * X1) + X2))) + 1/(square(sin(sin(pow(-1.2891089844873154 * X2, 3)))))))
-plt.figure()
-plt.title('Cijene bitcoina u posljednjih' + arrayLength + 'dana (USD)')
-plt.plot(Y)
-plt.plot(result, 'r', alpha=0.6)
-plt.legend(['Stvarna cijena bitcoina', 'Cijena dobivena sa funkcijom iz simboličke regresije'])
-plt.show()
+# result = (((29182.05778922693 - X2) - 1/(square(sin(sin(sin(pow(-1.2891089844873154 * X2,3))))))) - (((4482.529706112431 * exp(cos(square(X1 - -0.31671563304042566)))) * square(cos(square(1.7327020067419614 * X1) + X2))) + 1/(square(sin(sin(pow(-1.2891089844873154 * X2, 3)))))))
+# plt.figure()
+# plt.title('Cijene bitcoina u posljednjih' + arrayLength + 'dana (USD)')
+# plt.plot(Y)
+# plt.plot(result, 'r', alpha=0.6)
+# plt.legend(['Stvarna cijena bitcoina', 'Cijena dobivena sa funkcijom iz simboličke regresije'])
+# plt.show()
