@@ -4,34 +4,74 @@ import requests
 import json
 import matplotlib.pyplot as plt
 from numpy import sin, cos, tan, exp, square
-
-arrayLength = 100
-def sanitize(jsonData):
-    return np.float_(np.array(jsonData.json()['dataset']['data'])[:,1][:arrayLength])
-
-hashRate = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
-dificulty = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-averageBlockSize =  requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-minerRevenue = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-
-bitcoinPrice = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-
-X0 = sanitize(hashRate)
-X1 = sanitize(dificulty)
-X2 = sanitize(averageBlockSize)
-# X3 = sanitize(minerRevenue)
-
-X = np.c_[X0, X1, X2]
-
-Y = sanitize(bitcoinPrice)
-
 from pysr import PySRRegressor
+
+
+def sanitize(jsonData, arrayLength):
+    return np.float_(np.array(jsonData.json()['dataset']['data'])[:, 1][:arrayLength])
+
+
+hashRate = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
+dificulty = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+averageBlockSize = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+minerRevenue = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+usdTradeVolume = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/TRVOU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+transactionConfirmTime = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/ATRCT.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+costPerTransaction = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/CPTRA.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+transactionsPerBlock = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/NTRBL.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+marketCap = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKTCP.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+bitcoinPrice = requests.get(
+    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+
+arrayLength = 200
+
+x0 = sanitize(hashRate, arrayLength)
+x1 = sanitize(dificulty, arrayLength)
+x2 = sanitize(averageBlockSize, arrayLength)
+x3 = sanitize(minerRevenue, arrayLength)
+x4 = sanitize(usdTradeVolume, arrayLength)
+x5 = sanitize(transactionConfirmTime, arrayLength)
+x6 = sanitize(costPerTransaction, arrayLength)
+x7 = sanitize(transactionsPerBlock, arrayLength)
+x8 = sanitize(marketCap, arrayLength)
+
+Y = sanitize(bitcoinPrice, arrayLength)
+
+### ENABLE USING PRICE FROM THE DAY BEFORE
+x9 = sanitize(bitcoinPrice, arrayLength+1)
+new_price_yesterday = []
+
+for i in range(len(x9)-1):
+    new_price_yesterday.append(x9[i+1])
+
+x9 = new_price_yesterday
+
+X = np.c_[x0, x1, x2, x3, x4, x5, x6, x7, x8, x9]
 
 model = PySRRegressor(
     procs=4,
     populations=8,
     # ^ 2 populations per core, so one is always running.
-    population_size=50,
+    population_size=130,
     # ^ Slightly larger populations, for greater diversity.
     ncyclesperiteration=500, 
     # ^ Generations between migrations.
@@ -44,7 +84,7 @@ model = PySRRegressor(
     # ^ Alternatively, stop after 24 hours have passed.
     maxsize=50, #50 default, will reduce to 25
     # ^ Allow greater complexity.
-    maxdepth=10,
+    maxdepth=15,
     # ^ But, avoid deep nesting.
     binary_operators=["*", "+", "-", "/"],
     unary_operators=[
@@ -93,16 +133,29 @@ model = PySRRegressor(
     # ^ Start from where left off.
     # turbo=True,
     # ^ Faster evaluation (experimental)
-    loss="loss(prediction, target) = (prediction - target)^2",
+    loss="loss(prediction, target) = abs((prediction - target) / target)",
     # ^ Custom loss function (julia syntax)
 )
 
 model.fit(X,Y)
 
-result = (((29182.05778922693 - X2) - 1/(square(sin(sin(sin(pow(-1.2891089844873154 * X2,3))))))) - (((4482.529706112431 * exp(cos(square(X1 - -0.31671563304042566)))) * square(cos(square(1.7327020067419614 * X1) + X2))) + 1/(square(sin(sin(pow(-1.2891089844873154 * X2, 3)))))))
+x0 = np.array(x0, dtype=float)
+x1 = np.array(x1, dtype=float)
+x3 = np.array(x3, dtype=float)
+x4 = np.array(x4, dtype=float)
+x5 = np.array(x5, dtype=float)
+x6 = np.array(x6, dtype=float)
+x7 = np.array(x7, dtype=float)
+x8 = np.array(x8, dtype=float)
+x9 = np.array(x9, dtype=float)
+
+result = eval(str(model.sympy()))
+
+
 plt.figure()
-plt.title('Cijene bitcoina u posljednjih' + arrayLength + 'dana (USD)')
+plt.title('Cijene bitcoina u posljednjih ' + str(arrayLength) + ' dana (USD)')
 plt.plot(Y)
 plt.plot(result, 'r', alpha=0.6)
 plt.legend(['Stvarna cijena bitcoina', 'Cijena dobivena sa funkcijom iz simboličke regresije'])
-plt.show()
+plt.gca().invert_xaxis()
+plt.show() 
