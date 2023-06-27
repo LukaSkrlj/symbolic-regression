@@ -3,7 +3,7 @@ import numpy as np
 import requests
 import json
 import matplotlib.pyplot as plt
-from numpy import sin, cos, tan, exp, square
+from numpy import sin, cos, tan, exp, square, log, log10, log2
 from pysr import PySRRegressor
 
 
@@ -44,20 +44,20 @@ bitcoinPrice = requests.get(
 
 arrayLength = 200
 
-x0 = sanitize(hashRate, arrayLength)
-x1 = sanitize(dificulty, arrayLength)
-x2 = sanitize(averageBlockSize, arrayLength)
-x3 = sanitize(minerRevenue, arrayLength)
-x4 = sanitize(usdTradeVolume, arrayLength)
-x5 = sanitize(transactionConfirmTime, arrayLength)
-x6 = sanitize(costPerTransaction, arrayLength)
-x7 = sanitize(transactionsPerBlock, arrayLength)
-x8 = sanitize(marketCap, arrayLength)
+x0 = np.array(sanitize(hashRate, arrayLength), dtype=float)
+x1 = np.array(sanitize(dificulty, arrayLength), dtype=float)
+x2 = np.array(sanitize(averageBlockSize, arrayLength), dtype=float)
+x3 = np.array(sanitize(minerRevenue, arrayLength), dtype=float)
+x4 = np.array(sanitize(usdTradeVolume, arrayLength), dtype=float)
+x5 = np.array(sanitize(transactionConfirmTime, arrayLength), dtype=float)
+x6 = np.array(sanitize(costPerTransaction, arrayLength), dtype=float)
+x7 = np.array(sanitize(transactionsPerBlock, arrayLength), dtype=float)
+x8 = np.array(sanitize(marketCap, arrayLength), dtype=float)
 
 Y = sanitize(bitcoinPrice, arrayLength)
 
 ### ENABLE USING PRICE FROM THE DAY BEFORE
-x9 = sanitize(bitcoinPrice, arrayLength+1)
+x9 = np.array(sanitize(bitcoinPrice, arrayLength+1), dtype=float)
 new_price_yesterday = []
 
 for i in range(len(x9)-1):
@@ -92,6 +92,9 @@ model = PySRRegressor(
         "exp",
         "sin",
         "square",
+        "log",
+        "log10",
+        "log2",
         "cube",
         "inv(x) = 1/x",
         # ^ Custom operator (julia syntax)
@@ -138,16 +141,8 @@ model = PySRRegressor(
 )
 
 model.fit(X,Y)
+# model.predict(X)
 
-x0 = np.array(x0, dtype=float)
-x1 = np.array(x1, dtype=float)
-x3 = np.array(x3, dtype=float)
-x4 = np.array(x4, dtype=float)
-x5 = np.array(x5, dtype=float)
-x6 = np.array(x6, dtype=float)
-x7 = np.array(x7, dtype=float)
-x8 = np.array(x8, dtype=float)
-x9 = np.array(x9, dtype=float)
 
 result = eval(str(model.sympy()))
 
