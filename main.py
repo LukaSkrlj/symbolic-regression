@@ -3,79 +3,199 @@ import numpy as np
 import requests
 import json
 import matplotlib.pyplot as plt
-from numpy import sin, cos, tan, exp, square, log, log10, log2
+from numpy import sin, cos, tan, exp, square, log, log10, log2, ceil
 from pysr import PySRRegressor
 
+
+def sanitize_periods(jsonData, start, end):
+    return np.float_(np.array(jsonData.json()['dataset']['data'])[start:end, 1])
 
 def sanitize(jsonData, arrayLength):
     return np.float_(np.array(jsonData.json()['dataset']['data'])[:, 1][:arrayLength])
 
+def sanitize_fear(jsonData, arrayLength):
+    data = jsonData['data']
+    values = [entry['value'] for entry in data]
+    return values[:arrayLength]
 
-hashRate = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
-dificulty = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-averageBlockSize = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-minerRevenue = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-usdTradeVolume = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/TRVOU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-transactionConfirmTime = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/ATRCT.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-costPerTransaction = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/CPTRA.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-transactionsPerBlock = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/NTRBL.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-marketCap = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKTCP.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-bitcoinPrice = requests.get(
-    'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
-    '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+def sanitize_cpi(jsonData, arrayLength):
+    data = jsonData['dataset']['data']
+    values = [row[1] for row in data]
+    return np.float_(values[:arrayLength])
 
-arrayLength = 200
+def sanitize_eth(jsonData, arrayLength):
+    data = jsonData['dataset']['data']
+    mid_prices = [row[3] for row in data]
+    return np.float_(mid_prices[:arrayLength])
 
-x0 = np.array(sanitize(hashRate, arrayLength), dtype=float)
-x1 = np.array(sanitize(dificulty, arrayLength), dtype=float)
-x2 = np.array(sanitize(averageBlockSize, arrayLength), dtype=float)
-x3 = np.array(sanitize(minerRevenue, arrayLength), dtype=float)
-x4 = np.array(sanitize(usdTradeVolume, arrayLength), dtype=float)
-x5 = np.array(sanitize(transactionConfirmTime, arrayLength), dtype=float)
-x6 = np.array(sanitize(costPerTransaction, arrayLength), dtype=float)
-x7 = np.array(sanitize(transactionsPerBlock, arrayLength), dtype=float)
-x8 = np.array(sanitize(marketCap, arrayLength), dtype=float)
+ ###### USING DIFFERENT PERIODS FOR MODEL TRAINING
+def get_data_for_different_date_periods():
+    periods = [(0, 200), (1000, 1200), (2000, 2200), (3000, 3200), (4000, 4200)]
+    arrayLength = periods[-1][1] - periods[0][0]
 
-Y = sanitize(bitcoinPrice, arrayLength)
+    # Initialize empty arrays to hold the data
+    x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, Y = [], [], [], [], [], [], [], [], [], [], []
 
-### ENABLE USING PRICE FROM THE DAY BEFORE
-x9 = np.array(sanitize(bitcoinPrice, arrayLength+1), dtype=float)
-new_price_yesterday = []
+    hashRate = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
+    dificulty = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    averageBlockSize = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    minerRevenue = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    usdTradeVolume = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/TRVOU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    transactionConfirmTime = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/ATRCT.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    costPerTransaction = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/CPTRA.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    transactionsPerBlock = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/NTRBL.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    marketCap = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKTCP.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    bitcoinPrice = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 
-for i in range(len(x9)-1):
-    new_price_yesterday.append(x9[i+1])
 
-x9 = new_price_yesterday
+    for start, end in periods:
+        x0.extend(sanitize_periods(hashRate, start, end))
+        x1.extend(sanitize_periods(dificulty, start, end))
+        x2.extend(sanitize_periods(averageBlockSize, start, end))
+        x3.extend(sanitize_periods(minerRevenue, start, end))
+        x4.extend(sanitize_periods(usdTradeVolume, start, end))
+        x5.extend(sanitize_periods(transactionConfirmTime, start, end))
+        x6.extend(sanitize_periods(costPerTransaction, start, end))
+        x7.extend(sanitize_periods(transactionsPerBlock, start, end))
+        x8.extend(sanitize_periods(marketCap, start, end))
+        x9.extend(sanitize_periods(bitcoinPrice, start, end))
+        Y.extend(sanitize_periods(bitcoinPrice, start, end))
 
-X = np.c_[x0, x1, x2, x3, x4, x5, x6, x7, x8, x9]
+    # ENABLE USING PRICE FROM THE DAY BEFORE
+    new_price_yesterday = [0]
+
+    for i in range(len(x9)-1):
+        new_price_yesterday.append(x9[i])
+
+    x9 = new_price_yesterday
+
+    X = np.c_[x0, x1, x2, x3, x4, x5, x6, x7, x8, x9]
+
+    return X, Y, arrayLength
+
+###### USING LAST <ARRAY-LENGTH> DAYS FOR MODEL TRAINING
+def get_data_for_last_z_days():
+    
+    arrayLength = 200
+
+    # Request responses
+    hashRate = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI')
+    dificulty = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    averageBlockSize = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    minerRevenue = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    usdTradeVolume = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/TRVOU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    transactionConfirmTime = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/ATRCT.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    costPerTransaction = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/CPTRA.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    transactionsPerBlock = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/NTRBL.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    marketCap = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKTCP.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    bitcoinPrice = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid'
+        '=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+    cpi = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/RATEINF/CPI_USA.json?api_key=9o96oy7ZEy3hhZt1xb42'
+    )
+    fearResponse = requests.get(
+        'https://api.alternative.me/fng/?limit=0' # OKO 2000 PODATAKA
+    )
+    ethResponse = requests.get(
+        'https://data.nasdaq.com/api/v3/datasets/BITFINEX/ETHUSD.json?api_key=9o96oy7ZEy3hhZt1xb42'
+    )
+    
+    fearResponse = fearResponse.json()
+    ethResponse = ethResponse.json()
+    cpi = cpi.json()
+    
+    cpiLen = ceil(arrayLength / 30)
+    
+    x0 = np.array(sanitize(hashRate, arrayLength), dtype=float)
+    x1 = np.array(sanitize(dificulty, arrayLength), dtype=float)
+    x2 = np.array(sanitize(averageBlockSize, arrayLength), dtype=float)
+    x3 = np.array(sanitize(minerRevenue, arrayLength), dtype=float)
+    x4 = np.array(sanitize(usdTradeVolume, arrayLength), dtype=float)
+    x5 = np.array(sanitize(transactionConfirmTime, arrayLength), dtype=float)
+    x6 = np.array(sanitize(costPerTransaction, arrayLength), dtype=float)
+    x7 = np.array(sanitize(transactionsPerBlock, arrayLength), dtype=float)
+    x8 = np.array(sanitize(marketCap, arrayLength), dtype=float)
+    x11 = np.array(sanitize_fear(fearResponse, arrayLength), dtype=float)
+    x12 = np.array(sanitize_eth(ethResponse, arrayLength), dtype=float)
+
+    Y = sanitize(bitcoinPrice, arrayLength)
+
+    # EKONOMSKI FAKTORI
+    sanitized_cpi = np.array(sanitize_cpi(cpi, int(cpiLen)), dtype=float)
+    x10 = []
+
+    for cpiItem in sanitized_cpi:
+        repeated_items = np.repeat(cpiItem, 30)  # Repeat CPI item 30 times
+        x10.extend(repeated_items)
+
+    x10 = x10[:arrayLength]
+    
+    ### ENABLE USING PRICE FROM THE DAY BEFORE
+    x9 = sanitize(bitcoinPrice, arrayLength+1)
+    new_price_yesterday = []
+
+    for i in range(len(x9)-1):
+        new_price_yesterday.append(x9[i+1])
+
+    x9 = new_price_yesterday
+
+    X = np.c_[x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12]
+
+    return X, Y, arrayLength
+
+
+######## MAIN ############
+X, Y, arrayLen = get_data_for_last_z_days()
+x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12 = X.T
 
 model = PySRRegressor(
     procs=4,
-    populations=8,
+    populations=4,
     # ^ 2 populations per core, so one is always running.
-    population_size=130,
+    population_size=30,
     # ^ Slightly larger populations, for greater diversity.
     ncyclesperiteration=500, 
     # ^ Generations between migrations.
-    niterations=100,  # Increase for precision, reduce for time saving. 100000 will run forever
+    niterations=70,  # Increase for precision, reduce for time saving. 100000 will run forever
     early_stop_condition=(
         "stop_if(loss, complexity) = loss < 1e-6 && complexity < 10"
         # Stop early if we find a good and simple equation
@@ -84,7 +204,7 @@ model = PySRRegressor(
     # ^ Alternatively, stop after 24 hours have passed.
     maxsize=50, #50 default, will reduce to 25
     # ^ Allow greater complexity.
-    maxdepth=15,
+    maxdepth=10,
     # ^ But, avoid deep nesting.
     binary_operators=["*", "+", "-", "/"],
     unary_operators=[
@@ -148,7 +268,7 @@ result = eval(str(model.sympy()))
 
 
 plt.figure()
-plt.title('Cijene bitcoina u posljednjih ' + str(arrayLength) + ' dana (USD)')
+plt.title('Cijene bitcoina u posljednjih ' + str(arrayLen) + ' dana (USD)')
 plt.plot(Y)
 plt.plot(result, 'r', alpha=0.6)
 plt.legend(['Stvarna cijena bitcoina', 'Cijena dobivena sa funkcijom iz simboličke regresije'])
