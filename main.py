@@ -24,8 +24,16 @@ hashRate = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/HRATE.js
 difficulty = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/DIFF.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 averageBlockSize = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/AVBLS.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 minerRevenue = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MIREV.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
-
+usdTradeVolume = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/TRVOU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+transactionConfirmTime = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/ATRCT.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+costPerTransaction = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/CPTRA.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+transactionsPerBlock = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/NTRBL.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+marketCap = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKTCP.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
 bitcoinPrice = requests.get('https://data.nasdaq.com/api/v3/datasets/BCHAIN/MKPRU.json?api_key=9o96oy7ZEy3hhZt1xb42&fbclid=IwAR2bTZqq23hglhdRtpV4UrmYq02giUEvtHAL3qyJySLJA5Y9cmkatT403VI%27')
+cpi = requests.get('https://data.nasdaq.com/api/v3/datasets/RATEINF/CPI_USA.json?api_key=9o96oy7ZEy3hhZt1xb42')
+fearResponse = requests.get('https://api.alternative.me/fng/?limit=0')
+ethResponse = requests.get('https://data.nasdaq.com/api/v3/datasets/BITFINEX/ETHUSD.json?api_key=9o96oy7ZEy3hhZt1xb42')
+
 datasets = [hashRate, difficulty, averageBlockSize]
 
 averagedArrayLength = arrayLength // averageCount
